@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6年生 理科「ヒトや動物の体」組み立てパズル＆呼吸クイズ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f7fafc;
+            --panel-bg: #ffffff;
+            --accent-orange: #ff823a;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --text-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            color: var(--accent-orange);
+            margin-bottom: 5px;
+        }
+
+        /* コントロールパネル */
+        .control-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 12px 35px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 150; /* ボタンが確実に上にくるように設定 */
+        }
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        #btn-start { background-color: var(--accent-green); }
+        #btn-stop { background-color: var(--accent-red); }
+
+        /* ゲームステージ共通 */
+        .game-stage {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+        }
+
+        .game-stage.active {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stage-wrapper {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 100%;
+        }
+
+        /* --- ステージ1: 臓器パズル --- */
+        #stage1 .game-cover {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #475569;
+        }
+
+        #stage1 .stage-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 左側：パレット */
+        .parts-container {
+            flex: 1;
+            background: #f8fafc;
+            border: 3px dashed #cbd5e1;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .palette-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #475569;
+            border-left: 5px solid var(--accent-orange);
+            padding-left: 8px;
+        }
+
+        .parts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        /* 臓器パーツ */
+        .organ-piece {
+            background: white;
+            border: 2px solid #94a3b8;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: grab;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: bold;
+            font-size: 15px;
+        }
+        .organ-piece:active { cursor: grabbing; transform: scale(1.02); }
+
+        /* 臓器アイコンの形と色 */
+        .organ-icon { width: 35px; height: 35px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+        #p-mouth .organ-icon   { background: #ffccd5; border-radius: 50% 50% 0 0; }
+        #p-esoph .organ-icon   { background: #fbcfe8; width: 12px; border-radius: 4px; margin: 0 auto; }
+        #p-stomach .organ-icon { background: #fecdd3; border-radius: 40% 70% 70% 40%; transform: rotate(-15deg); }
+        #p-liver .organ-icon   { background: #991b1b; border-radius: 100px 20px 80px 20px; }
+        #p-small .organ-icon   { background: #fef08a; border: 2px dotted #ca8a04; }
+        #p-large .organ-icon   { background: #fed7aa; border-radius: 8px; border: 3px solid #ea580c; }
+        #p-lung .organ-icon    { background: #fca5a5; border-radius: 50% 50% 20% 20%; width: 20px; display: inline-block; box-shadow: 18px 0 0 #fca5a5; margin-right: 18px; }
+        #p-heart .organ-icon   { background: #dc2626; border-radius: 50% 50% 40% 40%; transform: scale(0.8); }
+        #p-kidney .organ-icon  { background: #7f1d1d; border-radius: 50% 20px 20px 50%; width: 15px; display: inline-block; box-shadow: 15px 0 0 #7f1d1d; margin-right: 15px; }
+
+        /* 右側：人体キャンバス */
+        .canvas-container {
+            display: flex;
+            gap: 15px;
+            flex: 2;
+        }
+
+        .body-view {
+            flex: 1;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            position: relative;
+            height: 580px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .view-title {
+            background: #cbd5e1;
+            padding: 4px 15px;
+            border-radius: 0 0 10px 10px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        .body-silhouette {
+            position: absolute;
+            top: 50px;
+            width: 170px;
+            height: 480px;
+            background: white;
+            border: 3px solid #94a3b8;
+            border-radius: 70px 70px 30px 30px;
+        }
+        .body-silhouette::before {
+            content: '';
+            position: absolute;
+            top: -40px; left: 40px;
+            width: 84px; height: 84px;
+            background: white;
+            border: 3px solid #94a3b8;
+            border-radius: 50%;
+        }
+
+        /* ドロップソケット */
+        .socket {
+            position: absolute;
+            border: 2px dashed #cbd5e1;
+            background: rgba(255,255,255,0.6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #64748b;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .socket.correct {
+            border: 2px solid #22c55e;
+            background: rgba(240, 253, 244, 0.9);
+            color: #15803d;
+            font-size: 13px;
+        }
+
+        /* ソケット位置 */
+        #s-mouth   { top: 25px;  left: 75px;  width: 40px;  height: 30px; z-index: 9; }
+        #s-esoph   { top: 65px;  left: 85px;  width: 20px;  height: 80px; z-index: 2; }
+        #s-lung    { top: 130px; left: 45px;  width: 100px; height: 65px; z-index: 3; }
+        #s-heart   { top: 145px; left: 75px;  width: 40px;  height: 45px; z-index: 4; }
+        #s-liver   { top: 195px; left: 40px;  width: 90px;  height: 55px; z-index: 7; }
+        #s-stomach { top: 205px; left: 100px; width: 55px;  height: 45px; z-index: 6; }
+        #s-large   { top: 250px; left: 45px;  width: 100px; height: 100px; z-index: 5; }
+        #s-small   { top: 265px; left: 57px;  width: 76px;  height: 70px; z-index: 8; }
+        #s-kidney  { top: 230px; left: 50px;  width: 90px;  height: 45px; z-index: 2; }
+
+        /* 結果表示オーバーレイ */
+        .result-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 20px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 200;
+            animation: pop 0.4s ease-out;
+        }
+
+        .result-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .result-card img {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 15px;
+            object-fit: contain;
+        }
+
+        .result-card h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .result-card p {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* --- ステージ2: 呼吸クイズ --- */
+        #stage2 .stage-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .respiration-diagram {
+            width: 100%;
+            max-width: 700px;
+            height: 450px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .resp-silhouette {
+            position: absolute;
+            top: 10px; left: 240px;
+            width: 220px; height: 430px;
+            background: white;
+            border: 4px solid #94a3b8;
+            border-radius: 90px 90px 40px 40px;
+        }
+
+        .resp-target {
+            position: absolute;
+            border: 3px solid #94a3b8;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #64748b;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .resp-target:hover {
+            border-color: var(--accent-blue);
+            background-color: rgba(219, 234, 254, 0.8);
+            color: var(--accent-blue);
+        }
+        .resp-target.active-resp {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            color: var(--accent-blue);
+            background: rgba(219, 234, 254, 0.9);
+        }
+        .resp-target.correct-resp {
+            border-color: var(--accent-green);
+            background: #f0fdf4;
+            color: var(--accent-green);
+        }
+        .resp-target.wrong-resp {
+            border-color: var(--accent-red);
+            background: #fef2f2;
+            color: var(--accent-red);
+        }
+
+        #rt-lung      { top: 80px; left: 275px; width: 150px; height: 80px; }
+        #rt-heart     { top: 175px; left: 325px; width: 50px; height: 50px; }
+        #rt-oxy-vessel  { top: 240px; left: 310px; width: 80px; height: 18px; color: var(--accent-blue); border-color: var(--accent-blue); }
+        #rt-co2-vessel  { top: 265px; left: 310px; width: 80px; height: 18px; color: var(--accent-red); border-color: var(--accent-red); }
+
+        .vessel-line {
+            position: absolute;
+            background: #cbd5e1;
+            z-index: 1;
+        }
+        #resp-oxy-line { top: 249px; left: 200px; width: 110px; height: 2px; }
+        #resp-co2-line { top: 274px; left: 390px; width: 110px; height: 2px; }
+
+        .resp-quest-panel {
+            background: #f8fafc;
+            border: 3px solid var(--accent-blue);
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+        .quest-title {
+            font-size: 20px;
+            color: var(--accent-blue);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .ans-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .ans-btn {
+            background: white;
+            border: 2px solid #94a3b8;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .ans-btn:hover {
+            border-color: var(--accent-blue);
+            background-color: #f0f9ff;
+            color: var(--accent-blue);
+        }
+        .ans-btn:active {
+            transform: scale(0.98);
+        }
+
+        #msg-box {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #334155;
+            min-height: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ヒトの体 組み立てパズル＆呼吸クイズ</h1>
+        <p>「始める」ボタンを押してスタート！パズルの後は呼吸の問題に挑戦しよう！</p>
+    </header>
+
+    <div class="control-panel">
+        <button class="btn" id="btn-start" onclick="startGame()">▶ 始める</button>
+        <button class="btn" id="btn-stop" onclick="stopGame()">■ やめる</button>
+    </div>
+
+    <div class="game-stage active" id="stage1">
+        <div class="game-cover" id="cover">「始める」ボタンを押してね！</div>
+        
+        <div class="result-overlay" id="puzzle-success-popup" style="background: rgba(34, 197, 94, 0.3);">
+            <div class="result-card" style="border: 5px solid var(--accent-green);">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/13210490807759530491" alt="Happy child character holding a golden trophy with cherry blossoms around">
+                <h2 style="color: var(--accent-green);">パズル せいかい！</h2>
+                <p>パーフェクト！臓器の場所はバッチリだね！次は呼吸（こきゅう）についての問題だよ。</p>
+                <button class="btn" style="background: var(--accent-green);" onclick="goToRespirationStage()">次の問題へ ▶</button>
+            </div>
+        </div>
+
+        <div class="result-overlay" id="puzzle-fail-popup" style="background: rgba(239, 68, 68, 0.2);">
+            <div class="result-card" style="border: 5px solid var(--accent-red);">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/3210490807759530491" alt="A confused looking young boy student under a small raincloud with a question mark near his head">
+                <h2 style="color: var(--accent-red);">ざんねん、ふごうかく…</h2>
+                <p>そこはちがう臓器の場所みたい。図をもう一度よく見て考えてみよう！</p>
+                <button class="btn" style="background: var(--accent-red);" onclick="closePopup('puzzle-fail-popup')">もういちど挑戦</button>
+            </div>
+        </div>
+
+        <div class="stage-wrapper">
+            <div class="parts-container">
+                <div class="palette-title">ドラッグするパーツ</div>
+                <div class="parts-grid" id="palette">
+                    <div class="organ-piece" id="p-mouth" draggable="true" data-target="mouth"><span class="organ-icon"></span>口</div>
+                    <div class="organ-piece" id="p-esoph" draggable="true" data-target="esoph"><span class="organ-icon"></span>食道</div>
+                    <div class="organ-piece" id="p-lung" draggable="true" data-target="lung"><span class="organ-icon"></span>肺</div>
+                    <div class="organ-piece" id="p-heart" draggable="true" data-target="heart"><span class="organ-icon"></span>心臓</div>
+                    <div class="organ-piece" id="p-liver" draggable="true" data-target="liver"><span class="organ-icon"></span>肝臓</div>
+                    <div class="organ-piece" id="p-stomach" draggable="true" data-target="stomach"><span class="organ-icon"></span>胃</div>
+                    <div class="organ-piece" id="p-small" draggable="true" data-target="small"><span class="organ-icon"></span>小腸</div>
+                    <div class="organ-piece" id="p-large" draggable="true" data-target="large"><span class="organ-icon"></span>大腸</div>
+                    <div class="organ-piece" id="p-kidney" draggable="true" data-target="kidney"><span class="organ-icon"></span>腎臓</div>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <div class="body-view">
+                    <div class="view-title">おなか側（パズル）</div>
+                    <div class="body-silhouette"></div>
+                    <div class="socket" id="s-mouth" data-organ="mouth">口</div>
+                    <div class="socket" id="s-esoph" data-organ="esoph">食道</div>
+                    <div class="socket" id="s-lung" data-organ="lung">肺</div>
+                    <div class="socket" id="s-heart" data-organ="heart">心臓</div>
+                    <div class="socket" id="s-liver" data-organ="liver">肝臓</div>
+                    <div class="socket" id="s-stomach" data-organ="stomach">胃</div>
+                    <div class="socket" id="s-large" data-organ="large">大腸</div>
+                    <div class="socket" id="s-small" data-organ="small">小腸</div>
+                </div>
+
+                <div class="body-view">
+                    <div class="view-title">せなか側（パズル）</div>
+                    <div class="body-silhouette"></div>
+                    <div class="socket" id="s-kidney" data-organ="kidney">腎臓</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-stage" id="stage2">
+        <div class="result-overlay" id="resp-success-popup" style="background: rgba(34, 197, 94, 0.3);">
+            <div class="result-card" style="border: 5px solid var(--accent-green);">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/13210490807759530491" alt="Happy child character holding a golden trophy with cherry blossoms around">
+                <h2 style="color: var(--accent-green);">全員ごうかく！パーフェクト！</h2>
+                <p>すばらしい！臓器の場所も、呼吸のしくみも、カンペキに覚えられたね！</p>
+                <button class="btn" style="background: var(--accent-green);" onclick="stopGame()">もう一度あそぶ</button>
+            </div>
+        </div>
+
+        <div class="stage-wrapper">
+            <div class="respiration-diagram">
+                <div class="view-title">呼吸の問題</div>
+                <div class="resp-silhouette"></div>
+                
+                <div class="resp-target" id="rt-lung" data-resp="lung">肺 の場所</div>
+                <div class="resp-target" id="rt-heart" data-resp="heart">心臓 の場所</div>
+                
+                <div class="vessel-line" id="resp-oxy-line"></div>
+                <div class="resp-target" id="rt-oxy-vessel" data-resp="oxy">（ア）の血管</div>
+                
+                <div class="vessel-line" id="resp-co2-line"></div>
+                <div class="resp-target" id="rt-co2-vessel" data-resp="co2">（イ）の血管</div>
+            </div>
+
+            <div class="resp-quest-panel">
+                <div class="quest-title" id="resp-quest-text">問題が表示されます</div>
+                <div class="ans-grid">
+                    <button class="ans-btn" data-ans="lung">肺（はい）</button>
+                    <button class="ans-btn" data-ans="heart">心臓（しんぞう）</button>
+                    <button class="ans-btn" data-ans="oxy">酸素が多い血管</button>
+                    <button class="ans-btn" data-ans="co2">二酸化炭素が多い血管</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="msg-box">ボタンを押してゲームを開始してください。</div>
+
+    <script>
+        const pieces = document.querySelectorAll('#stage1 .organ-piece');
+        const sockets = document.querySelectorAll('#stage1 .socket');
+        const msgBox = document.getElementById('msg-box');
+        const palette = document.getElementById('palette');
+        const cover = document.getElementById('cover');
+        
+        const stage1 = document.getElementById('stage1');
+        const stage2 = document.getElementById('stage2');
+        
+        const respTargets = document.querySelectorAll('#stage2 .resp-target');
+        const respQuestText = document.getElementById('resp-quest-text');
+        const ansBtns = document.querySelectorAll('#stage2 .ans-btn');
+        
+        let clearCount = 0;
+        let isPlaying = false;
+        let currentRespQuestIndex = 0;
+
+        const respirationQuests = [
+            { quest: "血液（けつえき）の中に空気を取り入れたり、出したりする臓器はどれですか。", ans: "lung" },
+            { quest: "血液を全身に送り出すポンプのはたらきをする臓器はどれですか。", ans: "heart" },
+            { quest: "肺で酸素（さんそ）を取り入れ、全身へ送られる血液が流れる血管（ア）は何ですか。", ans: "oxy" },
+            { quest: "全身から戻り、二酸化炭素（にさんかたんそ）を多く含んだ血液が流れる血管（イ）は何ですか。", ans: "co2" }
+        ];
+
+        // --- 音声生成機能 ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playCorrectSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(523.25, now);
+            gain1.gain.setValueAtTime(0.2, now);
+            gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc1.connect(gain1); gain1.connect(audioCtx.destination);
+            osc1.start(now); osc1.stop(now + 0.15);
+
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(659.25, now + 0.08);
+            gain2.gain.setValueAtTime(0.2, now + 0.08);
+            gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc2.start(now + 0.08); osc2.stop(now + 0.3);
+        }
+
+        function playWrongSound() {
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(140, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + 0.3);
+        }
+
+        // --- パズル処理 ---
+        pieces.forEach(piece => {
+            piece.addEventListener('dragstart', (e) => {
+                if (!isPlaying) return;
+                e.dataTransfer.setData('text/plain', e.target.id);
+                msgBox.innerText = p.innerText + " はどこかな？";
+            });
+        });
+
+        sockets.forEach(socket => {
+            socket.addEventListener('dragover', (e) => e.preventDefault());
+            socket.addEventListener('drop', (e) => {
+                if (!isPlaying) return;
+                e.preventDefault();
+                const pieceId = e.dataTransfer.getData('text/plain');
+                const piece = document.getElementById(pieceId);
+                if (!piece) return;
+
+                if (socket.dataset.organ === piece.dataset.target) {
+                    playCorrectSound();
+                    socket.classList.add('correct');
+                    socket.innerHTML = `⭕️ ${piece.innerText}`;
+                    piece.style.visibility = 'hidden';
+                    clearCount++;
+                    msgBox.innerText = `正解！${piece.innerText}の場所、バッチリだね！`;
+
+                    if (clearCount === pieces.length) {
+                        document.getElementById('puzzle-success-popup').style.display = 'flex';
+                        msgBox.innerHTML = "<span style='color:#22c55e; font-size:24px;'>🎉 全問正解！ごうかくです！次の問題へ進おう！</span>";
+                    }
+                } else {
+                    playWrongSound();
+                    document.getElementById('puzzle-fail-popup').style.display = 'flex';
+                    msgBox.innerText = "そこじゃないみたい。もう一度よく考えてみよう！";
+                }
+            });
+        });
+
+        // --- クイズ処理 ---
+        function goToRespirationStage() {
+            closePopup('puzzle-success-popup');
+            stage1.classList.remove('active');
+            stage2.classList.add('active');
+            msgBox.innerText = "呼吸についての問題だよ。下の選択肢から正解をクリックしてね！";
+            currentRespQuestIndex = 0;
+            showRespirationQuest();
+        }
+
+        function showRespirationQuest() {
+            if (currentRespQuestIndex < respirationQuests.length) {
+                const q = respirationQuests[currentRespQuestIndex];
+                respQuestText.innerText = `問題${currentRespQuestIndex + 1}: ${q.quest}`;
+                respTargets.forEach(t => t.classList.remove('correct-resp', 'wrong-resp', 'active-resp'));
+            } else {
+                playCorrectSound();
+                document.getElementById('resp-success-popup').style.display = 'flex';
+                msgBox.innerHTML = "<span style='color:#22c55e; font-size:24px;'>🎉 呼吸の問題も全員ごうかく！パーフェクト！</span>";
+            }
+        }
+
+        ansBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!isPlaying) return;
+                const chosenAns = btn.dataset.ans;
+                const correctAns = respirationQuests[currentRespQuestIndex].ans;
+                
+                // バグ修正：安全なID取得方法に変更
+                let targetId = "rt-" + chosenAns;
+                if (chosenAns === 'oxy' || chosenAns === 'co2') {
+                    targetId = "rt-" + chosenAns + "-vessel";
+                }
+                const target = document.getElementById(targetId);
+
+                respTargets.forEach(t => t.classList.remove('correct-resp', 'wrong-resp', 'active-resp'));
+
+                if (chosenAns === correctAns) {
+                    playCorrectSound();
+                    target.classList.add('correct-resp');
+                    target.innerHTML = `⭕️ 正解：${btn.innerText}`;
+                    msgBox.innerText = `正解！${btn.innerText}はここだね。次の問題に進みます。`;
+                    currentRespQuestIndex++;
+                    setTimeout(showRespirationQuest, 1500);
+                } else {
+                    playWrongSound();
+                    target.classList.add('wrong-resp');
+                    target.innerHTML = `❌ 違うよ：${btn.innerText}`;
+                    msgBox.innerText = `違うみたい。もう一度よく考えて答えを選んでね！`;
+                    setTimeout(() => {
+                        target.classList.remove('wrong-resp');
+                        if (chosenAns === 'oxy') {
+                            target.innerText = "（ア）の血管";
+                        } else if (chosenAns === 'co2') {
+                            target.innerText = "（イ）の血管";
+                        } else {
+                            target.innerText = target.innerText.split('：')[0].split('（イ）')[0];
+                        }
+                    }, 1200);
+                }
+            });
+        });
+
+        respTargets.forEach(target => {
+            target.addEventListener('click', () => {
+                if (!isPlaying) return;
+                const chosenResp = target.dataset.resp;
+                const correctAns = respirationQuests[currentRespQuestIndex].ans;
+
+                respTargets.forEach(t => t.classList.remove('correct-resp', 'wrong-resp', 'active-resp'));
+
+                if (chosenResp === correctAns) {
+                    playCorrectSound();
+                    target.classList.add('correct-resp');
+                    target.innerHTML = `⭕️ 正解：${chosenResp == 'oxy' ? "酸素血管" : chosenResp == 'co2' ? "二酸化炭素血管" : chosenResp == 'lung' ? "肺" : "心臓"}`;
+                    msgBox.innerText = `正解！そこが${chosenResp == 'oxy' ? "酸素血管" : chosenResp == 'co2' ? "二酸化炭素血管" : chosenResp == 'lung' ? "肺" : "心臓"}だね。次の問題に進みます。`;
+                    currentRespQuestIndex++;
+                    setTimeout(showRespirationQuest, 1500);
+                } else {
+                    playWrongSound();
+                    target.classList.add('wrong-resp');
+                    target.innerHTML = `❌ 違うよ`;
+                    msgBox.innerText = `違うみたい。問題に合わせて正しい場所を選んでね！`;
+                    setTimeout(() => {
+                        target.classList.remove('wrong-resp');
+                        target.innerText = chosenResp == 'oxy' ? "（ア）の血管" : chosenResp == 'co2' ? "（イ）の血管" : chosenResp == 'lung' ? "肺 の場所" : "心臓 の場所";
+                    }, 1200);
+                }
+            });
+        });
+
+        // --- ゲーム開始と終了 ---
+        function startGame() {
+            initAudio();
+
+            isPlaying = true;
+            clearCount = 0;
+            cover.style.display = 'none';
+            stage2.classList.remove('active');
+            stage1.classList.add('active');
+            msgBox.innerText = "パズル！パーツを選んで、体の正しい場所にドロップしてね！";
+            
+            pieces.forEach(p => p.style.visibility = 'visible');
+            
+            const labels = {
+                mouth: "口", esoph: "食道", lung: "肺", heart: "心臓",
+                liver: "肝臓", stomach: "胃", large: "大腸", small: "小腸", kidney: "腎臓"
+            };
+            sockets.forEach(s => {
+                s.classList.remove('correct');
+                s.innerText = labels[s.dataset.organ];
+            });
+
+            const respLabels = {
+                lung: "肺 の場所", heart: "心臓 の場所", oxy: "（ア）の血管", co2: "（イ）の血管"
+            };
+            respTargets.forEach(t => {
+                t.classList.remove('correct-resp', 'wrong-resp', 'active-resp');
+                t.innerText = respLabels[t.dataset.resp];
+            });
+
+            const arr = Array.from(pieces);
+            arr.sort(() => Math.random() - 0.5);
+            arr.forEach(p => palette.appendChild(p));
+            
+            closePopup('resp-success-popup');
+        }
+
+        function stopGame() {
+            isPlaying = false;
+            cover.style.display = 'flex';
+            cover.innerText = "ゲームがストップしたよ。もう一回やるなら「始める」を押してね！";
+            msgBox.innerText = "ボタンを押してゲームを開始してください。";
+            
+            closePopup('puzzle-success-popup');
+            closePopup('puzzle-fail-popup');
+            closePopup('resp-success-popup');
+            
+            stage2.classList.remove('active');
+            stage1.classList.add('active');
+        }
+
+        function closePopup(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+    </script>
+</body>
+</html>
